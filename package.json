@@ -1,0 +1,8 @@
+{
+  "name": "express-attack",
+  "version": "0.1.0",
+  "description": "Express middleware for blocking and throttling inspired by rack-attack",
+  "main": "index.js",
+  "author": "ocowchun@gmail.com",
+  "license": "MIT"
+}
