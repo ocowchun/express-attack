@@ -37,4 +37,30 @@ describe('attack', () => {
       expect(next).toBeCalled()
     })
   })
+
+  describe('blocklist', () => {
+    test('Always block', async () => {
+      req = fakeRequest({
+        method: 'GET'
+      })
+
+      await attack({ blocklist: [() => true] })(req, res, next)
+
+      expect(res.statusCode).toEqual(403)
+      expect(res.send).toBeCalledWith('Forbidden')
+    })
+  })
+
+  describe('throttles', () => {
+    test('Always throttle', async () => {
+      req = fakeRequest({
+        method: 'GET'
+      })
+
+      await attack({ throttles: [() => true] })(req, res, next)
+
+      expect(res.statusCode).toEqual(429)
+      expect(res.send).toBeCalledWith('Too Many Requests')
+    })
+  })
 })

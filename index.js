@@ -39,7 +39,7 @@ function middleware({ safelist = [], blocklist = [], throttles = [] }) {
       } else if (await isBlocklisted(req)) {
         return res.status(403).send('Forbidden')
       } else if (await isThrottled(req)) {
-        return res.status(503).send('Service Unavailable')
+        return res.status(429).send('Too Many Requests')
       } else {
         return next()
       }
