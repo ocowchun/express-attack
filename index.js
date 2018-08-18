@@ -1,4 +1,18 @@
-function middleware({ safelist = [], blocklist = [], throttles = [] }) {
+function defaultBlocklistedResponse(req, res) {
+  return res.status(403).send('Forbidden')
+}
+
+function defaultThrottledResponse(req, res) {
+  return res.status(429).send('Too Many Requests')
+}
+
+function middleware({
+  safelist = [],
+  blocklist = [],
+  throttles = [],
+  blocklistedResponse = defaultBlocklistedResponse,
+  throttledResponse = defaultThrottledResponse
+}) {
   async function isSafelisted(req) {
     for (let i = 0, max = safelist.length; i < max; i++) {
       const safeFn = safelist[i]
@@ -37,9 +51,9 @@ function middleware({ safelist = [], blocklist = [], throttles = [] }) {
       if (await isSafelisted(req)) {
         return next()
       } else if (await isBlocklisted(req)) {
-        return res.status(403).send('Forbidden')
+        return blocklistedResponse(req, res)
       } else if (await isThrottled(req)) {
-        return res.status(429).send('Too Many Requests')
+        return throttledResponse(req, res)
       } else {
         return next()
       }

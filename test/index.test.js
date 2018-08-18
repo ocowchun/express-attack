@@ -63,4 +63,44 @@ describe('attack', () => {
       expect(res.send).toBeCalledWith('Too Many Requests')
     })
   })
+
+  describe('blocklistedResponse', () => {
+    test('retrun custom blocklisted response', async () => {
+      req = fakeRequest({
+        method: 'GET'
+      })
+      const blocklistedResponse = (req, res) => {
+        return res.status(503).send('Service Unavailable')
+      }
+
+      await attack({ blocklist: [() => true], blocklistedResponse })(
+        req,
+        res,
+        next
+      )
+
+      expect(res.statusCode).toEqual(503)
+      expect(res.send).toBeCalledWith('Service Unavailable')
+    })
+  })
+
+  describe('throttledResponse', () => {
+    test('retrun custom throttled response', async () => {
+      req = fakeRequest({
+        method: 'GET'
+      })
+      const throttledResponse = (req, res) => {
+        return res.status(503).send('Service Unavailable')
+      }
+
+      await attack({ throttles: [() => true], throttledResponse })(
+        req,
+        res,
+        next
+      )
+
+      expect(res.statusCode).toEqual(503)
+      expect(res.send).toBeCalledWith('Service Unavailable')
+    })
+  })
 })
