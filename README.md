@@ -45,5 +45,24 @@ app.listen(3000, function() {
 
 ```
 
+## Customizing responses
+```js
+// do what ever you want with response.
+const blocklistedResponse = (req, res) => {
+  return res.status(503).send('Service Unavailable')
+}
+
+const throttledResponse = (req, res) => {
+  return res.status(503).send('Service Unavailable')
+}
+
+app.use(
+  expressAttack({
+    blocklistedResponse
+    throttledResponse
+  })
+)
+```
+
 
 MIT
