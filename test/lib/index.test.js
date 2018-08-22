@@ -1,10 +1,11 @@
 function fakeRequest({ method, headers, path }) {
   return {
-    method: method,
+    method,
     headers: headers || {
       origin: 'request.com',
       'access-control-request-headers': 'requestedHeader1,requestedHeader2'
-    }
+    },
+    path
   }
 }
 function fakeResponse() {
@@ -18,8 +19,26 @@ function fakeResponse() {
   return res
 }
 
+function testStore() {
+  const store = {}
+  const increment = function(key, expire) {
+    if (store[expire] === undefined) {
+      store[expire] = {}
+    }
+    if (store[expire][key] === undefined) {
+      store[expire][key] = 0
+    }
+    store[expire][key] = store[expire][key] + 1
+    return store[expire][key]
+  }
+
+  return {
+    increment
+  }
+}
+
 describe('attack', () => {
-  const attack = require('../index.js')
+  const attack = require('../../lib/index.js')
   let next, req, res
   beforeEach(() => {
     res = fakeResponse()
@@ -61,6 +80,43 @@ describe('attack', () => {
 
       expect(res.statusCode).toEqual(429)
       expect(res.send).toBeCalledWith('Too Many Requests')
+    })
+
+    describe('Use custom throttle function', () => {
+      const throttleFn = req => {
+        return {
+          key: req.path,
+          limit: 2,
+          period: 300
+        }
+      }
+      let middleware
+
+      beforeEach(() => {
+        req = fakeRequest({
+          method: 'GET',
+          path: 'foo'
+        })
+        middleware = attack({
+          throttles: [throttleFn],
+          store: testStore()
+        })
+      })
+
+      test('return throttle if request hit limit', async () => {
+        await middleware(req, jest.fn(), jest.fn())
+        await middleware(req, res, next)
+
+        expect(res.statusCode).toEqual(429)
+        expect(res.send).toBeCalledWith('Too Many Requests')
+      })
+
+      test('pass if request does not hit limit', async () => {
+        await middleware(req, res, next)
+
+        expect(next).toBeCalled()
+      })
+
     })
   })
 

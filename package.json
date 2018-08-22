@@ -2,7 +2,7 @@
   "name": "express-attack",
   "version": "0.2.1",
   "description": "Express middleware for blocking and throttling inspired by rack-attack",
-  "main": "index.js",
+  "main": "./lib/index.js",
   "author": "ocowchun@gmail.com",
   "license": "MIT",
   "scripts": {

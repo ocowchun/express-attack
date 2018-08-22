@@ -45,6 +45,61 @@ app.listen(3000, function() {
 
 ```
 
+## Throttling
+Using memoryStore to store throttled state by default, you can use your own store.
+
+```js
+// throttle request when given IP hit 50 times over 300 seconds
+function throttleByIp(req) {
+  const clientIp = requestIp.getClientIp(req)
+
+  return {
+    key: clientIp
+    limit: 50
+    period: 300
+  }
+}
+
+app.use(
+  expressAttack({
+    throttles: [throttleByIp]
+  })
+)
+```
+
+### Custom your store
+Create an object with `increment` function which will receive `key` and `period` and retrun `count`.
+
+```js
+function dummyStore() {
+  const store = {}
+  const increment = function(key, period) {
+    const currentTimestamp = new Date().getTime()
+    const expireIn = Math.ceil(currentTimestamp / period) * period
+    if (store[expireIn] === undefined) {
+      store[expireIn] = {}
+    }
+    if (store[expireIn][key] === undefined) {
+      store[expireIn][key] = 0
+    }
+    store[expireIn][key] = store[expireIn][key] + 1
+    return store[expireIn][key]
+  }
+
+  return {
+    increment
+  }
+}
+
+
+app.use(
+  expressAttack({
+    throttles: [throttleByIp],
+    store: dummyStore()
+  })
+)
+```
+
 ## Customizing responses
 ```js
 // do what ever you want with response.
