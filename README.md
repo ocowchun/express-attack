@@ -46,7 +46,7 @@ app.listen(3000, function() {
 ```
 
 ## Throttling
-Using memoryStore to store throttled state by default, you can use your own store.
+Using [memoryStore](https://github.com/ocowchun/express-attack/blob/master/lib/memoryStore.js) to store throttled state by default, you can use your own store.
 
 ```js
 // throttle request when given IP hit 50 times over 300 seconds
