@@ -19,7 +19,7 @@ function fakeResponse() {
 }
 
 describe('attack', () => {
-  const attack = require('../index.js')
+  const attack = require('../../lib/index.js')
   let next, req, res
   beforeEach(() => {
     res = fakeResponse()
