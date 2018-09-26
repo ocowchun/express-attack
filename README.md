@@ -119,5 +119,17 @@ app.use(
 )
 ```
 
+## Options
+* `safelist`: array of safe request functions, if one of the fucntion return `true`, ths request is allowed to go.
+* `blocklist`: array of block request functions, if one of the function reutrn `true`, the request is blocked.
+* `throttles`: array of throttle functions, check [Throttling](https://github.com/ocowchun/express-attack#throttling) for detail.
+* `safelistedResponse(req, res, next)`: custom your response when request is mark as `safelisted`.
+* `blocklistedResponse(req, res)`: custom your response when request is mark as `blocklisted`.
+* `throttledResponse(req, res)`: custom your response when request is mark as `throttled`.
+* `normalResponse(req, res, next)`: custom your response when request not in above situation.
+* `errorResponse(req, res, next)`: custom your response when exception raise during check request phase.
+* `store`: check [Custom your store](https://github.com/ocowchun/express-attack#custom-your-store) for detail.
 
+
+## License
 MIT
