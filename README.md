@@ -127,7 +127,7 @@ app.use(
 * `blocklistedResponse(req, res)`: custom your response when request is mark as `blocklisted`.
 * `throttledResponse(req, res)`: custom your response when request is mark as `throttled`.
 * `normalResponse(req, res, next)`: custom your response when request not in above situation.
-* `errorResponse(req, res, next)`: custom your response when exception raise during check request phase.
+* `errorResponse(req, res, next, error)`: custom your response when exception raise during check request phase.
 * `store`: check [Custom your store](https://github.com/ocowchun/express-attack#custom-your-store) for detail.
 
 
