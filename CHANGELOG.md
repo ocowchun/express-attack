@@ -1,3 +1,6 @@
+## 0.4.1 (2020-05-15)
+* Adjust Node.js version requirement
+
 ## 0.4.0 (2020-04-29)
 * Add `error` to `errorResponse`
 
