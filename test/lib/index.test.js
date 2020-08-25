@@ -19,24 +19,6 @@ function fakeResponse() {
   return res
 }
 
-function testStore() {
-  const store = {}
-  const increment = function(key, expire) {
-    if (store[expire] === undefined) {
-      store[expire] = {}
-    }
-    if (store[expire][key] === undefined) {
-      store[expire][key] = 0
-    }
-    store[expire][key] = store[expire][key] + 1
-    return store[expire][key]
-  }
-
-  return {
-    increment
-  }
-}
-
 describe('attack', () => {
   const attack = require('../../lib/index.js')
   let next, req, res
@@ -83,40 +65,80 @@ describe('attack', () => {
     })
 
     describe('Use custom throttle function', () => {
+      const key = 'yoooo'
+      const period = 300
       const throttleFn = req => {
         return {
-          key: req.path,
+          key: key,
           limit: 2,
-          period: 300
+          period: period
         }
       }
-      let middleware
+      let middleware, testStore
 
       beforeEach(() => {
         req = fakeRequest({
           method: 'GET',
           path: 'foo'
         })
-        middleware = attack({
-          throttles: [throttleFn],
-          store: testStore()
-        })
       })
 
+      function computeCurrentStep(period) {
+        const periodMs = period * 1000
+        const currentTimestamp = new Date().getTime()
+        return Math.ceil(currentTimestamp / periodMs) * periodMs
+      }
+
       test('return throttle if request hit limit', async () => {
-        await middleware(req, jest.fn(), jest.fn())
+        testStore = {
+          increment: jest.fn(() => 3),
+          get: jest.fn(() => 0)
+        }
+        middleware = attack({
+          throttles: [throttleFn],
+          store: testStore
+        })
+
         await middleware(req, res, next)
 
         expect(res.statusCode).toEqual(429)
         expect(res.send).toBeCalledWith('Too Many Requests')
+        const currentStep = computeCurrentStep(period)
+        expect(testStore.increment).toBeCalledWith(`${key}-${currentStep}`, period)
+      })
+
+      test('return throttle if request hit limit in previous step', async () => {
+        testStore = {
+          increment: jest.fn(() => 0),
+          get: jest.fn(() => 3)
+        }
+        middleware = attack({
+          throttles: [throttleFn],
+          store: testStore
+        })
+
+        await middleware(req, res, next)
+
+        expect(res.statusCode).toEqual(429)
+        expect(res.send).toBeCalledWith('Too Many Requests')
+        const prevStep = computeCurrentStep(period) - (period * 1000)
+        expect(testStore.get).toBeCalledWith(`${key}-${prevStep}`, period)
       })
 
       test('pass if request does not hit limit', async () => {
+        testStore = {
+          increment: jest.fn(() => 0),
+          get: jest.fn(() => 0)
+        }
+        middleware = attack({
+          throttles: [throttleFn],
+          store: testStore
+        })
+
         await middleware(req, res, next)
 
         expect(next).toBeCalled()
       })
-
     })
   })
 
