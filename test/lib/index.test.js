@@ -82,19 +82,13 @@ describe('attack', () => {
           method: 'GET',
           path: 'foo'
         })
-      })
-
-      function computeCurrentStep(period) {
-        const periodMs = period * 1000
-        const currentTimestamp = new Date().getTime()
-        return Math.ceil(currentTimestamp / periodMs) * periodMs
-      }
-
-      test('return throttle if request hit limit', async () => {
         testStore = {
-          set: jest.fn(() => 3),
+          set: jest.fn(() => 0),
           get: jest.fn(() => 0)
         }
+      })
+
+      test('return throttle if request hit limit', async () => {
         middleware = attack({
           throttles: [throttleFn],
           store: testStore
@@ -111,10 +105,6 @@ describe('attack', () => {
       })
 
       test('pass if request does not hit limit', async () => {
-        testStore = {
-          increment: jest.fn(() => 0),
-          get: jest.fn(() => 0)
-        }
         middleware = attack({
           throttles: [throttleFn],
           store: testStore
@@ -125,6 +115,21 @@ describe('attack', () => {
         await middleware(req, res, next)
 
         expect(next).toBeCalled()
+      })
+
+      test('should conside all throttle functions', async () => {
+        const throttleFn2 = () => Promise.resolve(true)
+        middleware = attack({
+          throttles: [throttleFn, throttleFn2],
+          store: testStore
+        })
+        const mockLimiter = { limit: jest.fn(() => Promise.resolve({ limited: false })) }
+        GCRALimiter.mockImplementation(() => mockLimiter)
+
+        await middleware(req, res, next)
+
+        expect(res.statusCode).toEqual(429)
+        expect(res.send).toBeCalledWith('Too Many Requests')
       })
     })
   })
