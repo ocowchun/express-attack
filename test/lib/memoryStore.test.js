@@ -3,10 +3,10 @@ describe('memoryStore', () => {
   const memoryStore = require('../../lib/memoryStore.js')
   const gcInterval = 10
   const realDate = Date;
-  const myDate = new Date(2018, 8, 22);
+  const now = new Date(2018, 8, 22);
 
   beforeAll(()=>{
-    global.Date = jest.fn(() => myDate);
+    global.Date = jest.fn(() => now);
   })
   afterAll(()=>{
     global.Date = realDate;
@@ -15,48 +15,31 @@ describe('memoryStore', () => {
     store = memoryStore({ gcInterval: 10 })
   })
 
-  describe('increment', () => {
+  describe('set', () => {
     it('return 1 when key not exists', async function() {
-      const result = await store.increment('a', 20)
+      const key = 'your-magic-is-mine'
+      const timestamp = new Date(2016, 7, 22).getTime()
+      const period = 3000
 
-      expect(result).toEqual(1)
-    })
+      await store.set(key, timestamp, period)
 
-    it('return 2 when key exists', async function() {
-      store.increment('a', 20)
-
-      const result = await store.increment('a', 20)
-
-      expect(result).toEqual(2)
+      expect(store.store[key].timestamp).toEqual(timestamp)
+      expect(store.store[key].expireAt).toEqual(now.getTime() + period)
     })
   })
 
   it('trigger gc', async function() {
-    store.increment('a', 20)
+    const advanceInterval = gcInterval * 1000
+    const timestamp = new Date(2016, 7, 22).getTime()
+    const expiredKey = 'your-magic-is-mine'
+    await store.set(expiredKey, timestamp, advanceInterval - 500)
+    const activeKey = 'ready-to-ride'
+    await store.set(activeKey, timestamp, advanceInterval + 500)
 
-    jest.advanceTimersByTime(gcInterval * 1000)
+    global.Date = jest.fn(() => new realDate(now.getTime() + advanceInterval))
+    jest.advanceTimersByTime(advanceInterval)
 
-    expect(store.store).toEqual({})
-  })
-
-  describe('get', () => {
-    it('return number when key exists', async function() {
-      const period = 60
-      const periodMs = period * 1000
-      const currentTimestamp = new Date().getTime()
-      const expireIn = Math.ceil(currentTimestamp / periodMs) * periodMs
-      const key = 'foo'
-      store.store[expireIn] = { [key]: 5 }
-
-      const result = await store.get(key, period)
-
-      expect(result).toEqual(5)
-    })
-
-    it("return 0 when key doesn't exists", async function() {
-      const result = await store.get('foo', 60)
-
-      expect(result).toEqual(0)
-    })
+    expect(store.store[expiredKey]).toEqual(undefined)
+    expect(store.store[activeKey].timestamp).toEqual(timestamp)
   })
 })
