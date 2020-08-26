@@ -1,8 +1,11 @@
+## 0.5.0 (2020-08-25)
+- **BREAKING CHANGE** Apply GCRA as new throttle strategy, you can read more about GCRA from [here](https://brandur.org/rate-limiting) or [here](https://github.com/Losant/redis-gcra)
+
 ## 0.4.1 (2020-05-15)
-* Adjust Node.js version requirement
+- Adjust Node.js version requirement
 
 ## 0.4.0 (2020-04-29)
-* Add `error` to `errorResponse`
+- Add `error` to `errorResponse`
 
 ## 0.3.3 (2019-09-20)
-* Upgrade jest to 24.9.0
+- Upgrade jest to 24.9.0

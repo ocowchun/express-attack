@@ -1,5 +1,5 @@
 # express-attack
-> Express middleware for blocking and throttling inspired by [rack-attack](https://github.com/kickstarter/rack-attack)
+> Express middleware for blocking and throttling inspired by [rack-attack](https://github.com/kickstarter/rack-attack) and [Node Redis GCRA Library](https://github.com/Losant/redis-gcra)
 
 ## Installation
 ```sh
@@ -46,17 +46,20 @@ app.listen(3000, function() {
 ```
 
 ## Throttling
-Using [memoryStore](https://github.com/ocowchun/express-attack/blob/master/lib/memoryStore.js) to store throttled state by default, you can use your own store.
+[GCRA](https://en.wikipedia.org/wiki/Generic_cell_rate_algorithm) is used for throttling. Default store is [memoryStore](https://github.com/ocowchun/express-attack/blob/master/lib/memoryStore.js), you can create your own store.
 
 ```js
-// throttle request when given IP hit 50 times over 300 seconds
+// If I want to allow 2 request per second and at most 6 requests simultaneously, then:
+// emissionInterval = period / rate => 1000 milliseconds / 2 reqs => 500
+// burst => 6
+
 function throttleByIp(req) {
   const clientIp = requestIp.getClientIp(req)
 
   return {
     key: clientIp
-    limit: 50
-    period: 300
+    burst 6,
+    emissionInterval: 500
   }
 }
 
@@ -67,27 +70,25 @@ app.use(
 )
 ```
 
-### Custom your store
-Create an object with `increment` function which will receive `key` and `period` and retrun `count`.
+### Create your store
+Create an object with below methods:
+`get(key)`: retrun value according to `key`, if `key` doesn't exsits return `undefined`.
+`set(key, timestamp, period)`: assign `timestamp` to `key`, and expire the key after `period` milliseconds.
+
 
 ```js
 function dummyStore() {
   const store = {}
-  const increment = function(key, period) {
-    const currentTimestamp = new Date().getTime()
-    const expireIn = Math.ceil(currentTimestamp / period) * period
-    if (store[expireIn] === undefined) {
-      store[expireIn] = {}
-    }
-    if (store[expireIn][key] === undefined) {
-      store[expireIn][key] = 0
-    }
-    store[expireIn][key] = store[expireIn][key] + 1
-    return store[expireIn][key]
+  const get = async function(key) {
+    return store[key]
+  }
+  const set = async function(key, timestamp, period) {
+    store[key] = timestamp
   }
 
   return {
-    increment
+    get,
+    set
   }
 }
 

@@ -19,26 +19,11 @@ function fakeResponse() {
   return res
 }
 
-function testStore() {
-  const store = {}
-  const increment = function(key, expire) {
-    if (store[expire] === undefined) {
-      store[expire] = {}
-    }
-    if (store[expire][key] === undefined) {
-      store[expire][key] = 0
-    }
-    store[expire][key] = store[expire][key] + 1
-    return store[expire][key]
-  }
-
-  return {
-    increment
-  }
-}
-
 describe('attack', () => {
   const attack = require('../../lib/index.js')
+  const GCRALimiter = require('../../lib/gcraLimiter')
+  jest.mock('../../lib/gcraLimiter')
+
   let next, req, res
   beforeEach(() => {
     res = fakeResponse()
@@ -83,40 +68,64 @@ describe('attack', () => {
     })
 
     describe('Use custom throttle function', () => {
+      const key = 'yoooo'
+      const burst = 10
+      const emissionInterval = 1000
+      const period = 300
       const throttleFn = req => {
-        return {
-          key: req.path,
-          limit: 2,
-          period: 300
-        }
+        return { key, burst, emissionInterval }
       }
-      let middleware
+      let middleware, testStore
 
       beforeEach(() => {
         req = fakeRequest({
           method: 'GET',
           path: 'foo'
         })
-        middleware = attack({
-          throttles: [throttleFn],
-          store: testStore()
-        })
       })
 
+      function computeCurrentStep(period) {
+        const periodMs = period * 1000
+        const currentTimestamp = new Date().getTime()
+        return Math.ceil(currentTimestamp / periodMs) * periodMs
+      }
+
       test('return throttle if request hit limit', async () => {
-        await middleware(req, jest.fn(), jest.fn())
+        testStore = {
+          set: jest.fn(() => 3),
+          get: jest.fn(() => 0)
+        }
+        middleware = attack({
+          throttles: [throttleFn],
+          store: testStore
+        })
+        const mockLimiter = { limit: jest.fn(() => Promise.resolve({ limited: true })) }
+        GCRALimiter.mockImplementation(() => mockLimiter)
+
         await middleware(req, res, next)
 
         expect(res.statusCode).toEqual(429)
         expect(res.send).toBeCalledWith('Too Many Requests')
+        expect(GCRALimiter).toBeCalledWith({ store: testStore, burst, emissionInterval })
+        expect(mockLimiter.limit).toBeCalledWith(key)
       })
 
       test('pass if request does not hit limit', async () => {
+        testStore = {
+          increment: jest.fn(() => 0),
+          get: jest.fn(() => 0)
+        }
+        middleware = attack({
+          throttles: [throttleFn],
+          store: testStore
+        })
+        const mockLimiter = { limit: jest.fn(() => Promise.resolve({ limited: false })) }
+        GCRALimiter.mockImplementation(() => mockLimiter)
+
         await middleware(req, res, next)
 
         expect(next).toBeCalled()
       })
-
     })
   })
 
