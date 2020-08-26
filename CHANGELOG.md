@@ -1,3 +1,8 @@
+## 0.5.1 (2020-08-26)
+- Fix throttle mechanism, it should try all throttle function until:
+  - A `throttle function` return `true` or `limited` equal `true`
+  - All `throttle function` passed
+
 ## 0.5.0 (2020-08-25)
 - **BREAKING CHANGE** Apply GCRA as new throttle strategy, you can read more about GCRA from [here](https://brandur.org/rate-limiting) or [here](https://github.com/Losant/redis-gcra)
 
