@@ -1,3 +1,6 @@
+## 0.5.2 (2020-09-24)
+- Upgrade packages #2, #4, #5, #6
+
 ## 0.5.1 (2020-08-26)
 - Fix throttle mechanism, it should try all throttle function until:
   - A `throttle function` return `true` or `limited` equal `true`
