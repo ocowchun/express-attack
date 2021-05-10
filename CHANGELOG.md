@@ -1,3 +1,7 @@
+## 0.5.3 (2021-05-10)
+- Upgrade packages #8, #9
+- Upgrade `jest` to `26.6.3`
+
 ## 0.5.2 (2020-09-24)
 - Upgrade packages #2, #4, #5, #6
 
